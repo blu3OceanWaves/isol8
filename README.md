@@ -8,17 +8,22 @@
 
 *A lightweight Python tool for secure malware analysis using disposable VirtualBox environments*
 
-[🚀 Quick Start](#quick-start) •
-[📖 Documentation](#documentation) •
-[🔧 Installation](#installation) •
-[💡 Examples](#usage-examples) •
-[🛡️ Security](#security-features)
+[What is Isol8?](#-what-is-isol8) •
+[Architecture Overview](#️-architecture-overview) •
+[Quick Start](#-quick-start) •
+[Usage Examples](#-usage-examples) •
+[Configuration Options](#️-configuration-options) •
+[Security Features](#️-security-features) •
+[Interesting Comparison](#-interesting-comparison) •
+[Installation](#-installation) •
+[Troubleshooting](#-troubleshooting) •
+[Contributing](#-contributing)
 
 ---
 
 </div>
 
-## 🎯 **What is Isol8?**
+## ➀ [What is Isol8?](#-what-is-isol8)
 
 Isol8 transforms VirtualBox into a secure malware analysis platform through intelligent VM lifecycle management. Unlike complex sandbox frameworks requiring dedicated infrastructure, Isol8 delivers enterprise-grade isolation in a single Python script.
 
@@ -42,7 +47,7 @@ Isol8 bridges this gap with:
 
 ---
 
-## 🏗️ **Architecture Overview**
+## ➁ [Architecture Overview](#️-architecture-overview)
 
 <div align="center">
 
@@ -86,7 +91,7 @@ graph TB
 
 ---
 
-## 🚀 **Quick Start**
+## ➂ [Quick Start](#-quick-start)
 
 ### Prerequisites
 - Python 3.7+
@@ -120,7 +125,7 @@ Select snapshot: 1
 
 ---
 
-## 📋 **Usage Examples**
+## ➃ [Usage Examples](#-usage-examples)
 
 <details>
 <summary><b>🔍 Quick Analysis Session</b></summary>
@@ -176,8 +181,7 @@ python isol8.py --vm TestVM --snapshot clean --dry-run
 
 ---
 
-## ⚙️ **Configuration Options**
-
+## ➄ [Configuration Options](#️-configuration-options)
 <div align="center">
 
 | Parameter | Description | Default | Example |
@@ -197,7 +201,7 @@ python isol8.py --vm TestVM --snapshot clean --dry-run
 
 ---
 
-## 🛡️ **Security Features**
+## ➅ [Security Features](#️-security-features)
 
 ### **VM Hardening Applied**
 ```python
@@ -227,7 +231,7 @@ settings = {
 
 ---
 
-## 🏆 **Honest Comparison**
+## ➆ [Interesting Comparison](#-interesting-comparison)
 
 <div align="center">
 
@@ -264,10 +268,11 @@ settings = {
 - Enterprise integration and API access
 - Comprehensive threat intelligence generation
 - Production security operations
+_letmeknowyouropinion_
 
 ---
 
-## 🔧 **Installation**
+## ℘ [Installation](#-installation)
 
 ### **System Requirements**
 - **OS**: Linux, macOS, Windows
@@ -297,8 +302,7 @@ VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.
 
 ---
 
-## 🔧 **Troubleshooting**
-
+## ➈ [Troubleshooting](#-troubleshooting)
 <details>
 <summary><b>Common Issues & Solutions</b></summary>
 
@@ -331,7 +335,7 @@ rm /tmp/isol8_vm_*.lock
 
 ---
 
-## 🤝 **Contributing**
+## ✎ᝰ. [Contributing](#-contributing)
 
 We welcome contributions! Here's how to get started:
 
