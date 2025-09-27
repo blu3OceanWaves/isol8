@@ -22,7 +22,7 @@
 
 </div>
 
-## 1️⃣ [What is Isol8?](#-what-is-isol8)
+## 1️⃣[What is Isol8?](#-what-is-isol8)
 
 Isol8 transforms VirtualBox into a secure malware analysis platform through intelligent VM lifecycle management. Unlike complex sandbox frameworks requiring dedicated infrastructure, Isol8 delivers enterprise-grade isolation in a single Python script.
 
