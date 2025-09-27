@@ -13,10 +13,14 @@ from typing import Optional, List, Dict, Any
 # Use 'None' for very long operations like full duplication.
 VBOX_TIMEOUT = 60 
 
+# Timeout for gracefully waiting for VM power off
+VM_POWEROFF_TIMEOUT = 90
+
 # Directory for lock and PID files (Use /tmp for transient files)
 TEMP_DIR = Path("/tmp")
-LOCK_FILE_PREFIX = "antivmalinux_vm_"
-TCPDUMP_PID_FILE = TEMP_DIR / "antivmalinux_tcpdump.pid"
+# Updated prefix to match tool name 'isol8'
+LOCK_FILE_PREFIX = "isol8_vm_" 
+TCPDUMP_PID_FILE = TEMP_DIR / "isol8_tcpdump.pid"
 
 # --- ANSI Color Codes for Logging ---
 class ANSIColors:
@@ -249,7 +253,7 @@ def resolve_snapshot_name(vm_name: str, initial_snapshot_name: str) -> str:
 
 
 def duplicate_linked(source_vm: str, duplicate_vm: str, snapshot_name: str, dry_run: bool = False):
-    """Establishes a new linked duplicate from a specified snapshot."""
+    """Clones a new linked duplicate from a specified snapshot."""
     cmd = [
         "VBoxManage", "clonevm", source_vm, 
         "--options", "link", 
@@ -258,22 +262,22 @@ def duplicate_linked(source_vm: str, duplicate_vm: str, snapshot_name: str, dry_
         "--register"
     ]
     if dry_run:
-        logging.info("[dry-run] would establish linked duplicate: %s from %s @ %s", duplicate_vm, source_vm, snapshot_name)
+        logging.info("[dry-run] would clone linked duplicate: %s from %s @ %s", duplicate_vm, source_vm, snapshot_name)
         return
     
     run(cmd, check=True)
-    logging.info("Linked duplicate established: %s", duplicate_vm)
+    logging.info("Linked duplicate cloned: %s", duplicate_vm)
 
 def duplicate_full(source_vm: str, target_vm: str, dry_run: bool = False):
-    """Forms a full, independent replica from a source VM."""
+    """Generates a full, independent replica from a source VM."""
     cmd = ["VBoxManage", "clonevm", source_vm, "--mode", "all", "--name", target_vm, "--register"]
     if dry_run:
-        logging.info("[dry-run] would form full replica: %s from %s", target_vm, source_vm)
+        logging.info("[dry-run] would generate full replica: %s from %s", target_vm, source_vm)
         return
     
     # Use None timeout for critical, long operations like full duplication
     run(cmd, check=True, timeout=None) 
-    logging.info("Full replica formed: %s (containing dirty state)", target_vm)
+    logging.info("Full replica generated: %s (containing dirty state)", target_vm)
 
 def dispose_vm(vm_name: str, erase_files: bool = True, dry_run: bool = False):
     """Removes a VM from VirtualBox and optionally erases its disk files."""
@@ -291,7 +295,7 @@ def dispose_vm(vm_name: str, erase_files: bool = True, dry_run: bool = False):
     logging.info("Removing VM: %s (Erase files: %s)", vm_name, erase_files)
     run(cmd, check=False) 
 
-def harden_vm(vm_name: str, dry_run: bool = False):
+def harden_vm(vm_name: str, args: argparse.Namespace, dry_run: bool = False):
     """Applies hardening settings for secure malware analysis."""
     
     # Settings to disable guest interaction and security risks
@@ -302,12 +306,6 @@ def harden_vm(vm_name: str, dry_run: bool = False):
         "audio": "null",
         "natnet1": "disabled", # Disable default NAT interface
     }
-    
-    # Add a Host-Only adapter for isolated network traffic capture
-    network_commands = [
-        ("nic1", "hostonly"),
-        ("hostonlyadapter1", "vboxnet0"), # Ensure 'vboxnet0' exists on your host
-    ]
 
     logging.info("Applying hardening settings to %s...", vm_name)
     
@@ -318,10 +316,20 @@ def harden_vm(vm_name: str, dry_run: bool = False):
     for key, value in settings.items():
         run(["VBoxManage", "modifyvm", vm_name, "--{0}".format(key), value], check=False)
         
-    for key, value in network_commands:
-        run(["VBoxManage", "modifyvm", vm_name, "--{0}".format(key), value], check=False)
-
-    logging.info("VM hardening complete. Isolated on vboxnet0.")
+    # --- Network Configuration ---
+    if args.air_gapped:
+        # Completely remove the network adapter for air-gapped analysis
+        run(["VBoxManage", "modifyvm", vm_name, "--nic1", "none"], check=False)
+        logging.info("VM hardening complete. **VM is fully air-gapped (no network adapter).**")
+    else:
+        # Add a Host-Only adapter for isolated network traffic capture
+        network_commands = [
+            ("nic1", "hostonly"),
+            ("hostonlyadapter1", "vboxnet0"), # Ensure 'vboxnet0' exists on your host
+        ]
+        for key, value in network_commands:
+            run(["VBoxManage", "modifyvm", vm_name, "--{0}".format(key), value], check=False)
+        logging.info("VM hardening complete. Isolated on vboxnet0.")
 
 
 def start_vm(vm_name: str, gui: bool, dry_run: bool = False):
@@ -361,7 +369,7 @@ def force_poweroff_vm(vm_name: str, dry_run: bool = False):
     logging.warning("Forcing power off VM: %s...", vm_name)
     run(cmd, check=False)
 
-def wait_for_poweroff(vm_name: str, timeout: int = 90) -> bool:
+def wait_for_poweroff(vm_name: str, timeout: int = VM_POWEROFF_TIMEOUT) -> bool:
     """Waits for the VM to reach the 'poweroff' state, up to a timeout."""
     start_time = time.monotonic()
     logging.info("Waiting for VM '%s' to power off gracefully (max %d seconds)...", vm_name, timeout)
@@ -389,7 +397,7 @@ def wait_for_poweroff(vm_name: str, timeout: int = 90) -> bool:
 
 def start_tcpdump(args: argparse.Namespace, dry_run: bool) -> tuple[Optional[subprocess.Popen], Optional[Path]]:
     """
-    Starts host-side network capture using either tcpdump (Linux/macOS) or tshark (Windows guest).
+    Initiates host-side network capture using either tcpdump (Linux/macOS) or tshark (Windows guest).
     """
     
     output_file = Path(f"/tmp/network_capture_{os.getpid()}.pcap")
@@ -406,10 +414,10 @@ def start_tcpdump(args: argparse.Namespace, dry_run: bool) -> tuple[Optional[sub
         cmd = ["sudo", "tcpdump", "-i", args.interface, "-w", str(output_file), "-s0"]
 
     if dry_run:
-        logging.info("[dry-run] would start network capture on interface %s (Tool: %s).", args.interface, tool_name)
+        logging.info("[dry-run] would initiate network capture on interface %s (Tool: %s).", args.interface, tool_name)
         return None, None
         
-    logging.info("Starting host-side network capture using %s on %s. Output: %s", tool_name, args.interface, output_file)
+    logging.info("Initiating host-side network capture using %s on %s. Output: %s", tool_name, args.interface, output_file)
     try:
         # Use Popen to run asynchronously
         p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
@@ -514,11 +522,12 @@ def analysis_workflow(vm_name: str, snapshot_name: str, args: argparse.Namespace
         # 1. Acquire lock to prevent concurrent runs on the base VM
         with VMLock(base_vm_name):
             
-            # 2. Establish Linked Duplicate
+            # 2. Clone Linked Duplicate
             duplicate_linked(base_vm_name, duplicate_vm_name, resolved_snapshot_name, args.dry_run)
             
             # 3. Harden the Duplicate (Network, USB, Clipboard off)
-            harden_vm(duplicate_vm_name, args.dry_run)
+            # Pass the args object to harden_vm to check for --air-gapped
+            harden_vm(duplicate_vm_name, args, args.dry_run)
             
             # 4. Commence Monitoring (if requested)
             if args.tcpdump:
@@ -542,7 +551,7 @@ def analysis_workflow(vm_name: str, snapshot_name: str, args: argparse.Namespace
                 
                 # Robustly wait for shutdown instead of fixed sleep
                 if not args.dry_run:
-                    wait_for_poweroff(duplicate_vm_name, timeout=90)
+                    wait_for_poweroff(duplicate_vm_name, timeout=VM_POWEROFF_TIMEOUT)
             
             else:
                 logging.info("VM running. Waiting for manual shutdown or Ctrl+C...")
@@ -585,9 +594,10 @@ def analysis_workflow(vm_name: str, snapshot_name: str, args: argparse.Namespace
         if args.keep_current and keep_vm_name:
             logging.info("Preserving dirty state as full replica: %s", keep_vm_name)
             try:
+                # Renamed function call in workflow
                 duplicate_full(duplicate_vm_name, keep_vm_name, args.dry_run)
             except ToolError as e:
-                logging.error("Failed to preserve dirty state (full duplication failed): %s", e)
+                logging.error("Failed to preserve dirty state (full generation failed): %s", e)
         
         # 10. Dispose of the Ephemeral Linked Duplicate (First Attempt)
         if not args.dry_run:
@@ -628,7 +638,8 @@ def analysis_workflow(vm_name: str, snapshot_name: str, args: argparse.Namespace
 def main():
     """Parses arguments, resolves VM and snapshot names, and runs the analysis workflow."""
     parser = argparse.ArgumentParser(
-        description="AntiVMaLinux: Securely run malware analysis in a disposable VirtualBox linked duplicate.",
+        # Updated description
+        description="Isol8: Securely run malware analysis in a disposable VirtualBox linked duplicate.",
         formatter_class=argparse.RawTextHelpFormatter
     )
     
@@ -662,12 +673,17 @@ def main():
     parser.add_argument(
         "--keep-current", 
         action="store_true", 
-        help="After analysis, establish a permanent full replica of the dirty state before disposal."
+        help="After analysis, generate a permanent full replica of the dirty state before disposal."
     )
     parser.add_argument(
         "--tcpdump", 
         action="store_true", 
         help="Commence host-side network traffic capture using the appropriate tool (tcpdump/tshark)."
+    )
+    parser.add_argument(
+        "--air-gapped", 
+        action="store_true", 
+        help="Completely disconnects the VM from the network by removing the network adapter (air-gapped mode)."
     )
     parser.add_argument(
         "--interface", 
@@ -685,8 +701,12 @@ def main():
     try:
         # 1. Pre-flight checks
         check_vbox_preflight()
+
+        # 2. Network Isolation Conflict Check
+        if args.air_gapped and args.tcpdump:
+            raise ToolError("Cannot use --air-gapped and --tcpdump together. Network capture requires a network interface.")
         
-        # 2. Interactive VM Selection Logic
+        # 3. Interactive VM Selection Logic
         vm_name = args.vm
         if not vm_name:
             vms = get_all_vms()
@@ -724,10 +744,10 @@ def main():
             parser.print_help()
             exit(1)
         
-        # 3. Snapshot Resolution Logic 
+        # 4. Snapshot Resolution Logic 
         resolved_snapshot = resolve_snapshot_name(vm_name, args.snapshot)
         
-        # 4. Execute the workflow with resolved names
+        # 5. Execute the workflow with resolved names
         if args.tcpdump and os.geteuid() != 0:
             tool_used = "tshark" if args.os == "windows" else "tcpdump"
             logging.warning("NETWORK CAPTURE WARNING: Running %s typically requires 'sudo' privileges. You may be prompted for a password.", tool_used)
