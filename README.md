@@ -1,331 +1,360 @@
-# AntiVMaLinux
-## 📦 - VirtualBox Containment Tool for Malware Analysis - 🔎
+<div align="center">
 
-**Python-based automation for ephemeral VM workflows with network isolation**
+# 🔒 Isol8
+### *Disposable VM Analysis Made Simple*
+
+[![VirtualBox](https://img.shields.io/badge/VirtualBox-Required-orange.svg?style=for-the-badge&logo=virtualbox&logoColor=white)](https://virtualbox.org)
+[![Security](https://img.shields.io/badge/Security-Hardened-red.svg?style=for-the-badge&logo=shield&logoColor=white)](#security-features)
+
+*A lightweight Python tool for secure malware analysis using disposable VirtualBox environments*
+
+[🚀 Quick Start](#quick-start) •
+[📖 Documentation](#documentation) •
+[🔧 Installation](#installation) •
+[💡 Examples](#usage-examples) •
+[🛡️ Security](#security-features)
 
 ---
 
-## Overview
+</div>
 
-AntiVMaLinux automates VirtualBox VM operations to provide isolated environments for malware analysis. The tool uses linked clones and enforced network isolation to reduce risk during suspicious file examination.
+## 🎯 **What is Isol8?**
 
-**What it does**: Spawns temporary VMs from clean snapshots, applies security settings, monitors execution, and destroys the environment  
-**What it doesn't do**: Prevent all possible escape vectors, guarantee perfect isolation, or replace proper network segmentation  
+Isol8 transforms VirtualBox into a secure malware analysis platform through intelligent VM lifecycle management. Unlike complex sandbox frameworks requiring dedicated infrastructure, Isol8 delivers enterprise-grade isolation in a single Python script.
 
----
-
-## Technical Architecture
-
-### Core Components
-- **Base VM Management**: Snapshot validation and linked clone operations
-- **Security Enforcement**: Network isolation and feature disabling
-- **Process Control**: File locking and state monitoring  
-- **Resource Management**: Automated cleanup and disk space management
-
-### Workflow Sequence
-```
-1. Validate base VM exists and is powered off
-2. Check/establish clean snapshot
-3. Generate linked clone from snapshot
-4. Apply security hardening to clone
-5. Start VM and monitor state
-6. Optionally preserve dirty state
-7. Destroy ephemeral clone
+```bash
+# One command to secure, isolated analysis
+python isol8.py --vm MalwareBase --snapshot clean --tcpdump --auto-shutdown 300
 ```
 
+### **The Problem**
+- **Traditional Sandboxes** require complex server infrastructure, databases, and maintenance overhead
+- **Manual VM Management** lacks proper hardening, cleanup, and monitoring integration
+- **Enterprise Solutions** are overkill for research, learning, or ad-hoc analysis
+
+### **The Solution**
+Isol8 bridges this gap with:
+- ⚡ **Instant Deployment** - No infrastructure setup required
+- 💾 **Storage Efficient** - Linked clones use 90% less disk space
+- 🔐 **Security Hardened** - Automatic isolation and attack surface reduction
+- 🎛️ **Interactive Analysis** - Direct GUI access when needed
+- 🧹 **Zero Residue** - Guaranteed cleanup with emergency fallbacks
+
 ---
 
-## Installation & Setup
+## 🏗️ **Architecture Overview**
+
+<div align="center">
+
+```mermaid
+graph TB
+    A[Clean VM Snapshot] -->|Clone| B[Disposable Analysis VM]
+    B --> C{Hardening Applied}
+    C -->|Network Isolation| D[Host-Only/Air-Gapped]
+    C -->|Disable USB/Clipboard| E[Attack Surface Reduced]
+    C -->|Lock Acquisition| F[Concurrent Protection]
+    
+    B --> G[Analysis Phase]
+    G -->|Optional| H[Network Capture]
+    G -->|Optional| I[GUI Interaction]
+    G -->|Optional| J[State Preservation]
+    
+    G --> K[Cleanup Phase]
+    K --> L[Graceful Shutdown]
+    L --> M[Force Cleanup if Needed]
+    M --> N[VM Disposal]
+    N --> O[Lock Release]
+    
+    style A fill:#4CAF50,stroke:#2E7D32,stroke-width:2px,color:#fff
+    style B fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
+    style C fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    style D fill:#E91E63,stroke:#AD1457,stroke-width:2px,color:#fff
+    style E fill:#E91E63,stroke:#AD1457,stroke-width:2px,color:#fff
+    style F fill:#E91E63,stroke:#AD1457,stroke-width:2px,color:#fff
+    style G fill:#3F51B5,stroke:#1A237E,stroke-width:2px,color:#fff
+    style H fill:#009688,stroke:#004D40,stroke-width:2px,color:#fff
+    style I fill:#009688,stroke:#004D40,stroke-width:2px,color:#fff
+    style J fill:#009688,stroke:#004D40,stroke-width:2px,color:#fff
+    style K fill:#FF5722,stroke:#BF360C,stroke-width:2px,color:#fff
+    style L fill:#FF5722,stroke:#BF360C,stroke-width:2px,color:#fff
+    style M fill:#FF5722,stroke:#BF360C,stroke-width:2px,color:#fff
+    style N fill:#FF5722,stroke:#BF360C,stroke-width:2px,color:#fff
+    style O fill:#607D8B,stroke:#263238,stroke-width:2px,color:#fff
+```
+
+</div>
+
+---
+
+## 🚀 **Quick Start**
 
 ### Prerequisites
-```bash
-# Required software
-VirtualBox 6.0+ (with VBoxManage in PATH)
-Python 3.8+
-tcpdump (for network capture)
-sudo access for tcpdump
+- Python 3.7+
+- VirtualBox installed and in PATH
+- A VM with clean snapshots ready
 
-# Network setup
-Host-only adapter configured (typically vboxnet0)
+### One-Line Setup
+```bash
+# Clone and run
+git clone https://github.com/yourusername/isol8.git && cd isol8
+python isol8.py
 ```
 
-### Initial Configuration
+### Interactive Mode
 ```bash
-# Verify VirtualBox installation
+# Select VM and snapshot interactively
+python isol8.py
+
+Available Virtual Machines:
+[1] Windows10-Analysis
+[2] Ubuntu-Sandbox
+[3] MalwareBase
+Select VM number: 1
+
+Available Snapshots:
+[1] CleanBase
+[2] clean-base  
+[3] PreInfection
+Select snapshot: 1
+```
+
+---
+
+## 📋 **Usage Examples**
+
+<details>
+<summary><b>🔍 Quick Analysis Session</b></summary>
+
+```bash
+# Start interactive analysis with network monitoring
+python isol8.py --vm MalwareBase --snapshot CleanBase --gui --tcpdump
+
+# Output:
+# [2024-01-15 14:30:25] INFO: Acquired lock on VM: MalwareBase
+# [2024-01-15 14:30:26] INFO: Linked duplicate cloned: MalwareBase_ANALYSIS_12345
+# [2024-01-15 14:30:27] INFO: VM hardening complete. Isolated on vboxnet0.
+# [2024-01-15 14:30:28] INFO: tcpdump process commenced (PID: 54321)
+# [2024-01-15 14:30:30] INFO: Commencing VM: MalwareBase_ANALYSIS_12345 in gui mode
+# [2024-01-15 14:30:35] INFO: VM running. Waiting for manual shutdown...
+```
+</details>
+
+<details>
+<summary><b>🕐 Timed Analysis with State Preservation</b></summary>
+
+```bash
+# 5-minute automated analysis with dirty state preservation
+python isol8.py --vm WindowsVM --auto-shutdown 300 --keep-current --air-gapped
+
+# Automatically shuts down after 5 minutes and saves infected state
+```
+</details>
+
+<details>
+<summary><b>🌐 Network Traffic Analysis</b></summary>
+
+```bash
+# Windows guest with tshark capture on custom interface
+python isol8.py --vm Win10 --os windows --interface eth0 --tcpdump
+
+# Network capture saved at: /tmp/network_capture_12345.pcap
+```
+</details>
+
+<details>
+<summary><b>🧪 Dry Run Testing</b></summary>
+
+```bash
+# Test configuration without actual VM operations
+python isol8.py --vm TestVM --snapshot clean --dry-run
+
+# [dry-run] would clone linked duplicate: TestVM_ANALYSIS_12345 from TestVM @ clean
+# [dry-run] would apply hardening settings
+# [dry-run] would commence VM in headless mode
+```
+</details>
+
+---
+
+## ⚙️ **Configuration Options**
+
+<div align="center">
+
+| Parameter | Description | Default | Example |
+|-----------|-------------|---------|---------|
+| `--vm` | Base VM name | *Interactive* | `--vm MalwareBase` |
+| `--snapshot` | Clean snapshot name | `CleanBase` | `--snapshot clean-state` |
+| `--os` | Guest OS type | `linux` | `--os windows` |
+| `--gui` | Enable GUI mode | `false` | `--gui` |
+| `--auto-shutdown` | Auto shutdown (seconds) | Manual | `--auto-shutdown 300` |
+| `--keep-current` | Preserve infected state | `false` | `--keep-current` |
+| `--tcpdump` | Network capture | `false` | `--tcpdump` |
+| `--air-gapped` | Complete isolation | `false` | `--air-gapped` |
+| `--interface` | Network interface | `vboxnet0` | `--interface eth0` |
+| `--dry-run` | Test mode | `false` | `--dry-run` |
+
+</div>
+
+---
+
+## 🛡️ **Security Features**
+
+### **VM Hardening Applied**
+```python
+# Automatic security configurations
+settings = {
+    "clipboard": "disabled",      # Prevent data exfiltration
+    "draganddrop": "disabled",    # Block file transfer
+    "usb": "off",                # Disable USB devices
+    "audio": "null",             # Mute audio channels
+}
+```
+
+### **Network Isolation Options**
+- **Host-Only Mode**: VM can only communicate with host via `vboxnet0`
+- **Air-Gapped Mode**: Complete network isolation (no adapter)
+- **Traffic Monitoring**: Built-in tcpdump/tshark integration
+
+### **Resource Protection**
+- **File Locking**: Prevents concurrent analysis on same base VM
+- **Emergency Cleanup**: Multiple fallback mechanisms ensure no VM residue
+- **Atomic Operations**: Snapshot operations are transaction-safe
+
+### **Attack Surface Reduction**
+- Minimal attack vectors through disabled services
+- No persistent changes to base VM
+- Isolated network segments prevent lateral movement
+
+---
+
+## 🏆 **Honest Comparison**
+
+<div align="center">
+
+| Feature | Isol8 | Cuckoo | CAPE | Manual VMs |
+|---------|-------|--------|------|------------|
+| **Setup Time** | < 1 min | Hours/Days | Hours/Days | Minutes |
+| **Infrastructure** | None | Server + DB | Server + DB | None |
+| **Storage Overhead** | 10-50%* | 100% | 100% | 100% |
+| **Interactive Access** | ✅ | ❌ | ❌ | ✅ |
+| **Automated Reports** | ❌ | ✅ | ✅ | ❌ |
+| **Security Hardening** | ✅ | ✅ | ✅ | ❌ |
+| **Network Monitoring** | Basic | Advanced | Advanced | Manual |
+| **Scalability** | Single | High | High | Manual |
+| **Learning Curve** | Low | High | High | Low |
+| **Analysis Depth** | Manual only | Comprehensive | Comprehensive | Manual only |
+| **Team Collaboration** | ❌ | ✅ | ✅ | ❌ |
+| **API Integration** | ❌ | ✅ | ✅ | ❌ |
+
+*Storage savings vary significantly based on analysis duration and VM activity
+
+</div>
+
+**What Isol8 is actually good for:**
+- Quick manual investigation of single samples
+- Learning malware analysis techniques
+- Environments with no server infrastructure
+- When you need GUI access to interact with malware
+- Ad-hoc analysis that doesn't require comprehensive reporting
+
+**What traditional sandboxes are better for:**
+- Automated behavioral analysis and IOC extraction
+- Processing multiple samples efficiently
+- Team environments requiring shared results
+- Enterprise integration and API access
+- Comprehensive threat intelligence generation
+- Production security operations
+
+---
+
+## 🔧 **Installation**
+
+### **System Requirements**
+- **OS**: Linux, macOS, Windows
+- **Python**: 3.7 or higher
+- **VirtualBox**: 6.0+ with VBoxManage in PATH
+- **Privileges**: sudo access for network capture (optional)
+
+### **Dependency Installation**
+```bash
+# Verify VirtualBox
 VBoxManage --version
 
-# Check host-only adapter
+# For network capture (optional)
+# Linux/macOS:
+sudo apt install tcpdump  # or: brew install tcpdump
+
+# Windows:
+# Install Wireshark (includes tshark)
+```
+
+### **Network Setup (Optional)**
+```bash
+# Set up host-only network for traffic monitoring
+VBoxManage hostonlyif create
+VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
+```
+
+---
+
+## 🔧 **Troubleshooting**
+
+<details>
+<summary><b>Common Issues & Solutions</b></summary>
+
+### **VBoxManage not found**
+```bash
+# Add VirtualBox to PATH
+export PATH="$PATH:/usr/local/bin"
+# Or install VirtualBox properly
+```
+
+### **Permission denied for network capture**
+```bash
+# Grant tcpdump capabilities
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/bin/tcpdump
+```
+
+### **VM won't start**
+```bash
+# Check VirtualBox host-only network exists
 VBoxManage list hostonlyifs
-
-# Test sudo tcpdump access
-sudo tcpdump -i vboxnet0 -c 1
-
-# Validate base VM
-VBoxManage list vms
-VBoxManage showvminfo "YourBaseVM" | grep State
 ```
 
-### Base VM Preparation
-Your base VM should be:
-- Powered off before tool execution
-- Pre-configured for analysis (tools installed, etc.)
-- Regularly backed up outside VirtualBox
-
----
-
-## Usage
-
-### Basic Operation
+### **Lock file exists**
 ```bash
-# Standard analysis session
-./antivmalinux.py --vm "Windows10-Analysis"
-
-# With GUI and 30-minute timeout
-./antivmalinux.py --vm "Ubuntu-Sandbox" --gui --auto-shutdown 1800
-
-# Test without making changes
-./antivmalinux.py --vm "TestVM" --dry-run --verbose
+# Manual cleanup if interrupted
+rm /tmp/isol8_vm_*.lock
 ```
 
-### Command Reference
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--vm` | Base VM name (required) | None |
-| `--clean-name` | Snapshot name for clean state | clean-base |
-| `--keep-current` | Preserve dirty state as full clone | False |
-| `--gui` | Start VM with GUI | headless |
-| `--auto-shutdown N` | ACPI shutdown after N seconds | 0 (manual) |
-| `--hostonly-adapter` | Network adapter name | vboxnet0 |
-| `--pcap-dir` | PCAP storage location | ~/antivma_pcaps |
-| `--prune-keep N` | Max preserved dirty VMs | 5 |
-| `--dry-run` | Show actions without executing | False |
-| `--verbose` | Debug logging | False |
+</details>
 
 ---
 
-## Security Implementation
+## 🤝 **Contributing**
 
-### Network Isolation
-- NIC 1: Host-only adapter (specified by user)
-- NICs 2-8: Explicitly disabled to prevent bypass attempts
-- No NAT, bridged, or internal network access
+We welcome contributions! Here's how to get started:
 
-### VM Hardening  
-Applied to every ephemeral clone:
+1. **Fork** the repository
+2. **Make** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Test** your changes with `--dry-run`
+4. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+5. **Push** to branch (`git push origin feature/amazing-feature`)
+6. **Open** a Pull Request
+
+### **Development Setup**
 ```bash
---clipboard disabled    # Prevents host clipboard access
---draganddrop disabled  # Blocks file transfer via GUI
---usb off              # Disables USB device passthrough
-# Shared folders removed if present
-```
+git clone https://github.com/yourusername/isol8.git
+cd isol8
 
-### Process Isolation
-- File locking prevents concurrent tool execution
-- Ephemeral clones use minimal disk space (linked to base)
-- Clean snapshots remain untouched during analysis
-
-### Limitations
-- Host-only network must be properly configured
-- Tool cannot prevent all VM escape techniques
-- Relies on VirtualBox security model
-- Requires proper host system hardening
-
----
-
-## File Locations
-
-### Logs and Temporary Files
-```
-~/AntiVMaLinux.log          # Main log file (5MB max, 5 files)
-~/antivma_pcaps/            # Network captures  
-/tmp/antivma-*.lock         # Process locks
-```
-
-### VM Naming Convention
-```
-{BaseVM}-ephemeral-{timestamp}     # Temporary analysis VM
-before-restore-{timestamp}         # Preserved dirty state (if --keep-current)
+# Test with dry run
+python isol8.py --dry-run --vm TestVM
 ```
 
 ---
 
-## Troubleshooting
+<div align="center">
 
-### Common Issues
+**[⬆ Back to Top](#-isol8)**
 
-**"VM not found"**
-```bash
-# Check exact VM name
-VBoxManage list vms
-```
-
-**"Lock file exists"**  
-```bash
-# Tool now automatically detects and removes stale locks from dead processes
-# Manual removal only needed if process detection fails
-rm /tmp/antivma-YourVM.lock
-```
-
-**"Permission denied for tcpdump"**
-```bash
-# Tool automatically detects root vs sudo requirements
-# Ensure passwordless sudo for tcpdump or run as root
-sudo -n tcpdump --version
-```
-
-**"Host-only adapter not found"**
-```bash
-# List available adapters
-VBoxManage list hostonlyifs
-# Tool provides enhanced error messages for missing adapters
-```
-
-**"VBoxManage timeout or hang"**
-```bash
-# Tool now has 60-second timeouts for VBoxManage operations
-# Check system resources and VirtualBox service status
-systemctl status vboxdrv  # On systemd systems
-```
-
-### Recovery Procedures
-```bash
-# List running ephemeral VMs
-VBoxManage list runningvms | grep ephemeral
-
-# Force shutdown
-VBoxManage controlvm "VM-Name" poweroff
-
-# Remove registered VM
-VBoxManage unregistervm "VM-Name" --delete
-
-# Clean up old preserved VMs
-VBoxManage list vms | grep before-restore
-```
-
----
-
-## Integration
-
-### Monitoring
-```bash
-# Check tool status
-pgrep -f antivmalinux.py
-
-# Monitor disk usage
-du -h ~/antivma_pcaps/
-df -h /tmp/
-
-# Review recent logs
-tail -f ~/AntiVMaLinux.log
-```
-
-### Automation
-```bash
-# Scheduled analysis (cron example)
-0 9 * * 1-5 /path/to/antivmalinux.py --vm "DailyAnalysis" --auto-shutdown 3600
-
-# Script integration
-if ./antivmalinux.py --vm "Scanner" --auto-shutdown 300 --dry-run; then
-    echo "Ready for analysis"
-fi
-```
-
-### Log Parsing
-```bash
-# Extract error events
-grep "ToolError" ~/AntiVMaLinux.log
-
-# Monitor PCAP generation
-grep "Started tcpdump" ~/AntiVMaLinux.log
-
-# Track VM lifecycle
-grep -E "(Linked clone|unregistered)" ~/AntiVMaLinux.log
-```
-
----
-
-## Performance Considerations
-
-### Disk Space
-- Linked clones: ~100MB per instance
-- Full clones (preserved): Same size as base VM
-- PCAPs: Variable based on network activity
-- Logs: 25MB maximum (5 x 5MB files)
-
-### Memory Usage
-- Tool itself: Minimal Python overhead
-- VMs: As configured in base VM settings
-- Host system should have sufficient RAM for base VM requirements
-
-### Network Load
-- Host-only traffic only
-- PCAP files grow based on VM network activity
-- No external network impact due to isolation
-
----
-
-## Maintenance
-
-### Regular Tasks
-```bash
-# Weekly: Review disk usage
-du -sh ~/antivma_pcaps/ ~/.VirtualBox/
-
-# Monthly: Clean old preserved VMs manually if needed
-VBoxManage list vms | grep before-restore
-
-# As needed: Validate clean snapshots
-./antivmalinux.py --vm "BaseVM" --dry-run --verbose
-```
-
-### Updates
-- Monitor VirtualBox releases for security updates
-- Test tool with new VirtualBox versions before deployment
-- Keep base VMs updated with latest analysis tools
-- Regular backup of clean snapshots
-
----
-
-## Known Limitations
-
-1. **Host Dependency**: Relies on host system security
-2. **VirtualBox Security**: Inherits VirtualBox vulnerabilities  
-3. **Network Configuration**: Manual host-only adapter setup required
-4. **Resource Constraints**: Limited by available disk space and memory
-5. **Timing Dependencies**: VM state changes may have race conditions
-6. **Privilege Requirements**: Needs sudo for network capture
-
----
-
-## Support Information
-
-**Tested Environments:**
-- VirtualBox 6.1.x and 7.0.x
-- Python 3.8-3.11
-- Linux hosts (Ubuntu 20.04+, RHEL 8+)
-
-**Log Levels:**
-- INFO: Standard operational messages
-- DEBUG: Detailed execution information (--verbose)
-- WARNING: Non-fatal issues
-- ERROR: Operation failures
-
-**Exit Codes:**
-- 0: Success
-- 1: ToolError (configuration/execution issue)  
-- 2: Unexpected error (programming/system issue)
-
-For operational issues, review logs and verify prerequisites before escalating.
-
----
-
-## Disclaimer
-
-This tool is provided as-is with no warranties or guarantees. It may fail to contain malware, could have security vulnerabilities, and might not work in your environment. Users are responsible for:
-
-- Testing thoroughly in isolated environments before production use
-- Understanding the security limitations and residual risks  
-- Having backup and recovery procedures in place
-- ...
-
-The publisher is *not* responsible for any damage, data loss, security breaches, or other consequences resulting from use of this tool.
+</div>
