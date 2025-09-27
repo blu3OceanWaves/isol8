@@ -137,7 +137,7 @@ python isol8.py --vm MalwareBase --snapshot CleanBase --gui --tcpdump
 <summary><b>🕐 Timed Analysis with State Preservation</b></summary>
 
 ```bash
-# 5-minute automated analysis with dirty state preservation
+# 5-minute analysis with dirty state preservation
 python isol8.py --vm WindowsVM --auto-shutdown 300 --keep-current --air-gapped
 
 # Automatically shuts down after 5 minutes and saves infected state
