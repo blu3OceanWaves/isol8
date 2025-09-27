@@ -7,7 +7,7 @@ Key features:
  - Mandatory clean snapshot validation/formation.
  - Ephemeral linked clones workflow (clone -> harden -> run -> monitor -> destroy).
  - Mandatory host-only hardening for safety (clipboard, dnd, usb, shared folders disabled).
- - TCPDump host-side capture with automatic rotation.
+ - TCPDump host-side capture with automatic rotation (now optional via --no-pcap).
  - Active VM state monitoring and automatic shutdown based on time limit.
  - Robust logging, retries, and cleanup via signal handling and finally blocks.
 """
@@ -161,7 +161,7 @@ def take_snapshot(vm_name: str, snap_name: str, description: str = "", dry_run: 
         return
     
     # Updated description string
-    if "Auto-created" in description:
+    if "Auto-formed" in description:
         description = "Auto-formed persistent clean base snapshot"
 
     last_exc = None
@@ -169,13 +169,13 @@ def take_snapshot(vm_name: str, snap_name: str, description: str = "", dry_run: 
         try:
             # Use check=True in run wrapper
             run(cmd, check=True)
-            logging.info("Snapshot '%s' taken for VM '%s'", snap_name, vm_name)
+            logging.info("Snapshot '%s' formed for VM '%s'", snap_name, vm_name)
             return
         except ToolError as e:
             last_exc = e
             logging.warning("Snapshot attempt %d/%d failed: %s", i, SNAP_RETRY, e)
             time.sleep(SNAP_RETRY_DELAY)
-    raise ToolError(f"Failed to take snapshot after {SNAP_RETRY} retries: {last_exc}")
+    raise ToolError(f"Failed to form snapshot after {SNAP_RETRY} retries: {last_exc}")
 
 # ---------- ephemeral clone helpers ----------
 def clone_linked(vm_name: str, snapshot: str, clone_name: str, dry_run: bool = False):
@@ -198,21 +198,30 @@ def clone_full(source_vm: str, target_vm: str, dry_run: bool = False):
 
 
 def unregister_delete_vm(vm_name: str, dry_run: bool = False):
-    """Safely powers off if needed, then deletes and unregisters the VM."""
+    """
+    Safely powers off if needed, and forces the VM out of any VBox lock, 
+    then deletes and unregisters the VM.
+    """
     if not vm_exists(vm_name):
         logging.debug("VM '%s' does not exist, skipping deletion.", vm_name)
         return
 
     if not dry_run:
         state = get_vm_state(vm_name)
+        
+        # 1. Force poweroff to release any VBox internal locks
         if state not in ("poweroff", "aborted", "unknown"):
              logging.info("Forcing poweroff of VM '%s' (State: %s) before deletion.", vm_name, state)
              try:
-                 # Force poweroff with a timeout to prevent indefinite hang
-                 run(["VBoxManage", "controlvm", vm_name, "poweroff"], check=True, timeout=10)
+                 # Use poweroff twice if needed, and allow it to fail non-critically
+                 run(["VBoxManage", "controlvm", vm_name, "poweroff"], check=False, timeout=10)
+                 # Give VBox a moment to clean up internal state
+                 time.sleep(1)
              except ToolError as e:
+                 # Log but continue to unregister --delete
                  logging.warning("Failed to gracefully poweroff %s: %s. Continuing with deletion.", vm_name, e)
 
+    # 2. Attempt final deletion
     cmd = ["VBoxManage", "unregistervm", vm_name, "--delete"]
     if dry_run:
         logging.info("[dry-run] would unregister & delete VM: %s", vm_name)
@@ -221,7 +230,11 @@ def unregister_delete_vm(vm_name: str, dry_run: bool = False):
         run(cmd, check=True)
         logging.info("VM unregistered and deleted: %s", vm_name)
     except ToolError as e:
-        logging.warning("Failed to unregister/delete VM %s: %s", vm_name, e)
+        # Check if the error is still a VBOX_E_INVALID_OBJECT_STATE (internal lock)
+        if "locked" in (e.stderr or ""):
+            logging.error("Final cleanup failed due to persistent internal lock on VM '%s'. Please manually close and delete the VM via VirtualBox GUI.", vm_name)
+        else:
+            logging.warning("Failed to unregister/delete VM %s: %s", vm_name, e)
 
 # ---------- hardening helpers ----------
 def disable_risky_features(vm_name: str, dry_run: bool = False):
@@ -337,10 +350,13 @@ def start_tcpdump(interface: str, out_path: Path, dry_run: bool = False) -> Tupl
         return None, out_path
     
     if os.getuid() != 0:
+        # Note the potential for the password prompt here
         logging.warning("tcpdump requires root permissions; running via 'sudo'. Ensure passwordless sudo is configured for tcpdump or be prepared to enter a password.")
 
     try:
         # Popen to run non-blocking
+        # NOTE: If this stalls due to a password prompt, it will still proceed with the VM start
+        # but the capture won't start until the password is entered.
         p = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         # Write PID file for reliable cleanup
@@ -511,6 +527,8 @@ def main(argv=None):
     parser.add_argument("--dry-run", action="store_true", help="Do not execute destructive commands.")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--hostonly-adapter", default=DEFAULT_HOSTONLY_ADAPTER, help=f"Host-only adapter to isolate VM (default: {DEFAULT_HOSTONLY_ADAPTER}).")
+    # Added new flag to disable PCAP capture
+    parser.add_argument("--no-pcap", action="store_true", help="Skip host-side network traffic capture (tcpdump).")
     parser.add_argument("--pcap-dir", default=DEFAULT_PCAP_DIR, type=Path, help=f"Directory for PCAPs (default: {DEFAULT_PCAP_DIR}).")
     parser.add_argument("--pcap-interface", default=DEFAULT_HOSTONLY_ADAPTER, help="Interface for host-side capture (default: same as --hostonly-adapter).")
     parser.add_argument("--prune-keep", type=int, default=5, help="Maximum number of persistent 'before-restore' VMs to keep.")
@@ -561,17 +579,21 @@ def main(argv=None):
         remove_shared_folders(clone_name, dry_run=args.dry_run)
         set_hostonly(clone_name, args.hostonly_adapter, dry_run=args.dry_run)
 
-        # 4. Prune PCAPs & Start Capture
-        prune_pcaps(args.pcap_dir)
-        pcap_file = args.pcap_dir / f"{clone_name}.pcap"
-        tcpdump_proc, _ = start_tcpdump(args.pcap_interface, pcap_file, dry_run=args.dry_run)
+        # 4. Prune PCAPs & Start Capture (OPTIONAL)
+        if not args.no_pcap:
+            prune_pcaps(args.pcap_dir)
+            pcap_file = args.pcap_dir / f"{clone_name}.pcap"
+            tcpdump_proc, _ = start_tcpdump(args.pcap_interface, pcap_file, dry_run=args.dry_run)
+        else:
+            logging.info("Skipping network traffic capture (--no-pcap specified).")
+
 
         # 5. Start VM
         logging.info("Starting ephemeral VM: %s", clone_name)
         start_type = "gui" if args.gui else "headless"
         start_cmd = ["VBoxManage", "startvm", clone_name, "--type", start_type]
         if not args.dry_run:
-            run(start_cmd, check=True)
+            run(start_cmd, check=True) # THIS IS WHERE THE STALL OCCURRED PREVIOUSLY
 
         # 6. Monitor Loop
         start_time = time.time()
@@ -627,12 +649,13 @@ def main(argv=None):
     finally:
         # 8. Cleanup in finally block
         # Stop TCPdump via PID file/Popen object
-        stop_tcpdump(tcpdump_proc) 
+        if tcpdump_proc:
+            stop_tcpdump(tcpdump_proc) 
         
         if clone_name:
             # This ensures cleanup even if the run fails mid-way.
-            # This deletes the *original ephemeral clone* and its linked disk.
-            unregister_delete_vm(clone_name, dry_run=args.dry_run) 
+            # The function unregister_delete_vm now includes a force-poweroff attempt.
+            unregister_delete_vm(clone_name, dry_run=args.dry-run) 
         if lock_path:
             release_lock(lock_path)
         
