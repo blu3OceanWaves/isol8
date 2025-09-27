@@ -32,7 +32,7 @@ Isol8 bridges this gap with:
 - 💾 **Storage Efficient** - Linked clones use 90% less disk space
 - 🔐 **Security Hardened** - Automatic isolation and attack surface reduction
 - 🎛️ **Interactive Analysis** - Direct GUI access when needed
-- 🧹 **Clean Up** - Deleting the clone with additional Emergency fallbacks
+- 🧹 **Clean Up** - Deleting the clone with additional Emergency fallbacks if needed
 
 ---
 
