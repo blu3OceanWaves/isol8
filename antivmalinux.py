@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AntiVMaLinux - Production-ready VirtualBox containment/ephemeral-run tool for malware analysis.
+AntiVMaLinux - VirtualBox containment/ephemeral-run tool for malware analysis.
 
 Key features:
  - Robust state management and concurrency control using file locking.
@@ -128,6 +128,54 @@ def get_vm_state(vm_name: str) -> str:
         if line.startswith("VMState="):
             return line.split("=",1)[1].strip().strip('"')
     return "unknown"
+
+# ---------- Host-Only Adapter Setup ----------
+def ensure_host_only_adapter(adapter_name: str, dry_run: bool):
+    """
+    Ensures the specified host-only adapter exists and establishes it with default 
+    settings (192.168.56.1/24) if missing.
+    """
+    
+    # Check if adapter already exists
+    cp = run(["VBoxManage", "list", "hostonlyifs"])
+    if f"Name:            {adapter_name}" in cp.stdout:
+        logging.info("Host-only adapter '%s' already exists. Proceeding.", adapter_name)
+        return
+        
+    logging.warning("Host-only adapter '%s' not found. Attempting automatic establishment and configuration.", adapter_name)
+
+    # 1. Establish the interface (this usually sets up the next available like vboxnet0)
+    # NOTE: 'create' must remain here as it is the literal VBoxManage command argument.
+    cmd_create = ["VBoxManage", "hostonlyif", "create"]
+    # 2. Configure the interface (Standard VBoxNet0 defaults: 192.168.56.1/24)
+    cmd_ip = ["VBoxManage", "hostonlyif", "ipconfig", adapter_name, 
+              "--ip", "192.168.56.1", "--netmask", "255.255.255.0"]
+    
+    if dry_run:
+        logging.info("[dry-run] would run VBoxManage hostonlyif create")
+        logging.info("[dry-run] would run: %s", shlex.join(cmd_ip))
+        return
+
+    try:
+        # Step 1: Establish the interface
+        run(cmd_create, check=True)
+        # Give VBox a moment to register the new interface
+        time.sleep(1)
+    except Exception as e:
+        # Establishment often requires root permissions on Linux if VBox isn't configured for the user.
+        raise ToolError(f"Failed to establish host-only adapter. This usually requires elevated permissions or fixing VirtualBox permissions on your host. Error: {e}")
+
+    try:
+        # Step 2: Configure the IP/Netmask
+        run(cmd_ip, check=True)
+        logging.info("Successfully established and configured host-only adapter '%s' (IP 192.168.56.1).", adapter_name)
+    except Exception as e:
+        # If config fails, remove the interface set up in step 1
+        logging.warning("Failed to configure IP on new adapter. Attempting to remove partial interface.")
+        # Attempt non-critical removal
+        run(["VBoxManage", "hostonlyif", "remove", adapter_name], check=False) 
+        raise ToolError(f"Failed to configure IP for '{adapter_name}'. Manual check needed. Error: {e}")
+
 
 # ---------- snapshot helpers ----------
 def snapshot_list(vm_name: str) -> str:
@@ -432,7 +480,7 @@ def acquire_lock(vm_name: str) -> Path:
     
     # Attempt to acquire the lock immediately (handles the clean case)
     try:
-        # O_CREAT: create if not exists (Cannot be renamed as it's an OS constant)
+        # os.O_CREAT is a system constant for file generation and must be used as-is.
         fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         with os.fdopen(fd, "w") as fh:
             fh.write(str(os.getpid()))
@@ -552,6 +600,9 @@ def main(argv=None):
         # Pre-flight Checks (Fail fast)
         ensure_vboxmanage()
 
+        # AUTOMATIC HARDENING: Ensure the Host-Only Adapter exists.
+        ensure_host_only_adapter(args.hostonly_adapter, dry_run=args.dry_run)
+
         # Lock (must be done before checking VM state to ensure exclusivity)
         lock_path = acquire_lock(args.vm) # Critical locking
 
@@ -655,7 +706,7 @@ def main(argv=None):
         if clone_name:
             # This ensures cleanup even if the run fails mid-way.
             # The function unregister_delete_vm now includes a force-poweroff attempt.
-            unregister_delete_vm(clone_name, dry_run=args.dry-run) 
+            unregister_delete_vm(clone_name, dry_run=args.dry_run) 
         if lock_path:
             release_lock(lock_path)
         
