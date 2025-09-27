@@ -335,9 +335,9 @@ rm /tmp/isol8_vm_*.lock
 
 ---
 
-## ✎ᝰ. [Contributing](#-contributing)
+## ✎ᝰ.[Contributing](#-contributing)
 
-We welcome contributions! Here's how to get started:
+Here's how to get started:
 
 1. **Fork** the repository
 2. **Make** a feature branch (`git checkout -b feature/amazing-feature`)
