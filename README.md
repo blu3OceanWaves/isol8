@@ -1,5 +1,5 @@
 # AntiVMaLinux
-## VirtualBox Containment Tool for Malware Analysis
+## 📦 - VirtualBox Containment Tool for Malware Analysis - 🔎
 
 **Python-based automation for ephemeral VM workflows with network isolation**
 
