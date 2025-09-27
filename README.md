@@ -26,13 +26,13 @@ python isol8.py --vm MalwareBase --snapshot clean --tcpdump --auto-shutdown 300
 - **Manual VM Management** lacks proper hardening, cleanup, and monitoring integration
 - **Enterprise Solutions** are overkill for research, learning, or ad-hoc analysis
 
-### **The Solution**
+### **A Solution**
 Isol8 bridges this gap with:
 - ⚡ **Instant Deployment** - No infrastructure setup required
 - 💾 **Storage Efficient** - Linked clones use 90% less disk space
 - 🔐 **Security Hardened** - Automatic isolation and attack surface reduction
 - 🎛️ **Interactive Analysis** - Direct GUI access when needed
-- 🧹 **Zero Residue** - Guaranteed cleanup with emergency fallbacks
+- 🧹 **Clean Up** - Deleting the clone with additional Emergency fallbacks
 
 ---
 
