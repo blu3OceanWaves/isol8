@@ -22,7 +22,7 @@
 
 </div>
 
-## ➀ [What is Isol8?](#-what-is-isol8)
+## 1️⃣ [What is Isol8?](#-what-is-isol8)
 
 Isol8 transforms VirtualBox into a secure malware analysis platform through intelligent VM lifecycle management. Unlike complex sandbox frameworks requiring dedicated infrastructure, Isol8 delivers enterprise-grade isolation in a single Python script.
 
@@ -46,7 +46,7 @@ Isol8 bridges this gap with:
 
 ---
 
-## ➁ [Architecture Overview](#️-architecture-overview)
+## 2️⃣ [Architecture Overview](#️-architecture-overview)
 
 <div align="center">
 
@@ -90,7 +90,7 @@ graph TB
 
 ---
 
-## ➂ [Quick Start](#-quick-start)
+## 3️⃣ [Quick Start](#-quick-start)
 
 ### Prerequisites
 - Python 3.7+
@@ -124,7 +124,7 @@ Select snapshot: 1
 
 ---
 
-## ➃ [Usage Examples](#-usage-examples)
+## 4️⃣ [Usage Examples](#-usage-examples)
 
 <details>
 <summary><b>🔍 Quick Analysis Session</b></summary>
@@ -180,7 +180,7 @@ python isol8.py --vm TestVM --snapshot clean --dry-run
 
 ---
 
-## ➄ [Configuration Options](#️-configuration-options)
+## 5️⃣ [Configuration Options](#️-configuration-options)
 <div align="center">
 
 | Parameter | Description | Default | Example |
@@ -200,7 +200,7 @@ python isol8.py --vm TestVM --snapshot clean --dry-run
 
 ---
 
-## ➅ [Security Features](#️-security-features)
+## 6️⃣ [Security Features](#️-security-features)
 
 ### **VM Hardening Applied**
 ```python
@@ -230,7 +230,7 @@ settings = {
 
 ---
 
-## ➆ [Interesting Comparison](#-interesting-comparison)
+## 7️⃣ [Interesting Comparison](#-interesting-comparison)
 
 <div align="center">
 
@@ -271,7 +271,7 @@ _letmeknowyouropinion_
 
 ---
 
-## ℘ [Installation](#-installation)
+## isol8️⃣ [Installation](#-installation)
 
 ### **System Requirements**
 - **OS**: Linux, macOS, Windows
@@ -301,7 +301,7 @@ VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.
 
 ---
 
-## ➈ [Troubleshooting](#-troubleshooting)
+## 9️⃣ [Troubleshooting](#-troubleshooting)
 <details>
 <summary><b>Common Issues & Solutions</b></summary>
 
@@ -334,7 +334,7 @@ rm /tmp/isol8_vm_*.lock
 
 ---
 
-## ✎ᝰ.[Contributing](#-contributing)
+## 🪧 [Contributing](#-contributing)
 
 Here's how to get started:
 
@@ -355,6 +355,13 @@ python isol8.py --dry-run --vm TestVM
 ```
 
 ---
+
+<div align="center">
+    <img width="641" height="36" alt="image" src="https://github.com/user-attachments/assets/4ce4a3e5-c3cd-49ff-ace6-78e3206ff9c5" /><br>
+    <a href="https://www.linkedin.com/in/yassin-el-wardioui-34016b332" target="_blank">
+      <img src="https://img.shields.io/badge/LinkedIn-Connect%20with%20me-0077B5?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=0077B5&color=004182" />
+    </a>
+</div>
 
 <div align="center">
 
