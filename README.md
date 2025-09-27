@@ -17,7 +17,6 @@
 [Interesting Comparison](#-interesting-comparison) •
 [Installation](#-installation) •
 [Troubleshooting](#-troubleshooting) •
-[Contributing](#-contributing)
 
 ---
 
