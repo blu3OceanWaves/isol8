@@ -90,7 +90,7 @@ graph TB
 ### One-Line Setup
 ```bash
 # Clone and run
-git clone https://github.com/yourusername/isol8.git && cd isol8
+git clone https://github.com/blu3OceanWaves/isol8.git && cd isol8
 python isol8.py
 ```
 
@@ -338,13 +338,13 @@ Here's how to get started:
 
 ### **Development Setup**
 ```bash
-git clone https://github.com/yourusername/isol8.git
+git clone https://github.com/blu3OceanWaves/isol8.git
 cd isol8
 
 # Test with dry run
 python isol8.py --dry-run --vm TestVM
 ```
-
+###### _This software is provided "as you find it." The publisher makes no guarantees and are not liable for any issues. Use at your own risk._
 ---
 
 <div align="center">
