@@ -220,28 +220,7 @@ settings = {
 
 ---
 
-## 7️⃣ [Interesting Comparison](#-interesting-comparison)
 
-<div align="center">
-
-| Feature | Isol8 | Cuckoo | CAPE | Manual VMs |
-|---------|-------|--------|------|------------|
-| **Setup Time** | < 1 min | Hours/Days | Hours/Days | Minutes |
-| **Infrastructure** | None | Server + DB | Server + DB | None |
-| **Storage Overhead** | 10-50%* | 100% | 100% | 100% |
-| **Interactive Access** | ✅ | ❌ | ❌ | ✅ |
-| **Automated Reports** | ❌ | ✅ | ✅ | ❌ |
-| **Security Hardening** | ✅ | ✅ | ✅ | ❌ |
-| **Network Monitoring** | Basic | Advanced | Advanced | Manual |
-| **Scalability** | Single | High | High | Manual |
-| **Learning Curve** | Low | High | High | Low |
-| **Analysis Depth** | Manual only | Comprehensive | Comprehensive | Manual only |
-| **Team Collaboration** | ❌ | ✅ | ✅ | ❌ |
-| **API Integration** | ❌ | ✅ | ✅ | ❌ |
-
-*Storage savings vary significantly based on analysis duration and VM activity
-
-</div>
 
 **What Isol8 is actually good for:**
 - Quick manual investigation of single samples
